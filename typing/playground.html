@@ -1,34 +1,68 @@
 <html>
 
-<head></head>
+<head>
+    <style>
+        span.caret {
+            background: #ccc;
+        }
+        
+        span.error {
+            color: #f00;
+        }
+
+    </style>
+</head>
 
 <body>
     <div id='text'></div>
+    <div id='count-down'></div>
+    <div id='input'></div>
+    <div id='wpm'></div>
+    <div id='errors'></div>
     <script>
+        var text = "Oh I come from a land. From a faraway place. Where the caravan camels roam. Where they cut off your ear. Where it's flat and immense. If they don't like your face. And the heat is intense. It's barbaric, but hey--it's home! When the wind's at your back. And the sun's from the west. And the sand in the glass is right. Come on down, Stop on by. Hop a carpet and fly. To another Arabian night!";
         (function() {
-            var count = 5;
+            var errors = [];
+            var count = 2;
+            var index = 0;
+            document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='caret'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
             var countdown = window.setInterval(function() {
-                console.log(count);
-                count--;
-                if (count == 0) {
-                    console.log('go');
-                    window.clearInterval(countdown);
-                    var startTime = Date.now();
+                    document.getElementById('count-down').innerHTML = count;
 
-                    document.addEventListener("keyup", function(e) {
-                        var timeSince = ((Date.now() - startTime) / 60000);
-                        var grossWPM = (document.getElementById('text').innerHTML.length / 5) / timeSince;
-                        //console.debug('keyCode=' + e.keyCode + ', timeSince=' + timeSince + ', grossWPM=' + grossWPM);
-                        if (e.keyCode == 8) { // backspace
-                            document.getElementById('text').innerHTML = document.getElementById('text').innerHTML.substring(0, document.getElementById('text').innerHTML.length - 1);
-                            return;
-                        }
+                    if (count == 0) {
+                        window.clearInterval(countdown);
+                        document.getElementById('count-down').innerHTML = 'go';
 
-                        document.getElementById('text').innerHTML += e.key;
-                    });
-                }
-            }, 1000);
+                        var startTime = Date.now();
+                        document.addEventListener("keydown", function(e) {
+                            var timeSince = ((Date.now() - startTime) / 60000);
+                            var grossWPM = (document.getElementById('input').innerHTML.length / 5) / timeSince;
+                            document.getElementById('wpm').innerHTML = Math.floor(grossWPM) + ' wpm';
+                            //console.debug('keyCode=' + e.keyCode + ', timeSince=' + timeSince + ', grossWPM=' + grossWPM);
+
+                            if (e.keyCode == 8 || e.keyCode == 16 || e.keyCode == 17 || e.keyCode == 18) { // backspace, shift, control, alt
+                                return;
+                            }
+
+                            if (text.charAt(index) == e.key) {
+                                document.getElementById('input').innerHTML += e.key;
+                                index++;
+                                document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='caret'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
+                            } else {
+                                document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='error'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
+                                if (errors.indexOf(index) == -1) {
+                                    errors.push(index, text.charAt(index));
+                                }    
+                            }
+                            document.getElementById('errors').innerHTML = '<br/>error rate: '+ Math.floor(errors.length * 50 / document.getElementById('input').innerHTML.length)+ '%<br/>'+errors+"<br/>letters typed: "+ document.getElementById('input').innerHTML.length +', errors: ' + errors.length/2;
+                        });
+                    }
+
+                    count--;
+                },
+                1000);
         })();
+
     </script>
 </body>
 
