@@ -1,0 +1,35 @@
+<html>
+
+<head></head>
+
+<body>
+    <div id='text'></div>
+    <script>
+        (function() {
+            var count = 5;
+            var countdown = window.setInterval(function() {
+                console.log(count);
+                count--;
+                if (count == 0) {
+                    console.log('go');
+                    window.clearInterval(countdown);
+                    var startTime = Date.now();
+
+                    document.addEventListener("keyup", function(e) {
+                        var timeSince = ((Date.now() - startTime) / 60000);
+                        var grossWPM = (document.getElementById('text').innerHTML.length / 5) / timeSince;
+                        //console.debug('keyCode=' + e.keyCode + ', timeSince=' + timeSince + ', grossWPM=' + grossWPM);
+                        if (e.keyCode == 8) { // backspace
+                            document.getElementById('text').innerHTML = document.getElementById('text').innerHTML.substring(0, document.getElementById('text').innerHTML.length - 1);
+                            return;
+                        }
+
+                        document.getElementById('text').innerHTML += e.key;
+                    });
+                }
+            }, 1000);
+        })();
+    </script>
+</body>
+
+</html>
