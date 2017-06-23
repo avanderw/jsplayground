@@ -2,6 +2,11 @@
 
 <head>
     <style>
+        #error-bars {
+            width: 900px;
+            height: 500px;
+        }
+        
         span.caret {
             background: #ccc;
         }
@@ -16,52 +21,86 @@
 <body>
     <div id='text'></div>
     <div id='count-down'></div>
-    <div id='input'></div>
     <div id='wpm'></div>
     <div id='errors'></div>
+    <div id='error-bars'></div>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="data-errors.js"></script>
     <script>
+        var chart;
+        google.charts.load('current', {
+            packages: ['bar']
+        });
+        google.charts.setOnLoadCallback(function() {
+            var graphData = google.visualization.arrayToDataTable(data.errors.graphData());
+            chart = new google.charts.Bar(document.getElementById('error-bars'));
+            chart.draw(graphData, google.charts.Bar.convertOptions(options));
+        });
+
         var text = "Oh I come from a land. From a faraway place. Where the caravan camels roam. Where they cut off your ear. Where it's flat and immense. If they don't like your face. And the heat is intense. It's barbaric, but hey--it's home! When the wind's at your back. And the sun's from the west. And the sand in the glass is right. Come on down, Stop on by. Hop a carpet and fly. To another Arabian night!";
+        var startTime;
+        var count = 2;
+        var index = 0;
+        var state = "typing";
+        var countdown;
+
+        var options = {
+            chart: {
+                title: 'Error keys',
+                subtitle: 'Count'
+            },
+            bars: 'vertical'
+        };
+
         (function() {
-            var errors = [];
-            var count = 2;
-            var index = 0;
             document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='caret'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
-            var countdown = window.setInterval(function() {
-                    document.getElementById('count-down').innerHTML = count;
-
-                    if (count == 0) {
-                        window.clearInterval(countdown);
-                        document.getElementById('count-down').innerHTML = 'go';
-
-                        var startTime = Date.now();
-                        document.addEventListener("keydown", function(e) {
-                            var timeSince = ((Date.now() - startTime) / 60000);
-                            var grossWPM = (document.getElementById('input').innerHTML.length / 5) / timeSince;
-                            document.getElementById('wpm').innerHTML = Math.floor(grossWPM) + ' wpm';
-                            //console.debug('keyCode=' + e.keyCode + ', timeSince=' + timeSince + ', grossWPM=' + grossWPM);
-
-                            if (e.keyCode == 8 || e.keyCode == 16 || e.keyCode == 17 || e.keyCode == 18) { // backspace, shift, control, alt
-                                return;
-                            }
-
-                            if (text.charAt(index) == e.key) {
-                                document.getElementById('input').innerHTML += e.key;
-                                index++;
-                                document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='caret'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
-                            } else {
-                                document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='error'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
-                                if (errors.indexOf(index) == -1) {
-                                    errors.push(index, text.charAt(index));
-                                }    
-                            }
-                            document.getElementById('errors').innerHTML = '<br/>error rate: '+ Math.floor(errors.length * 50 / document.getElementById('input').innerHTML.length)+ '%<br/>'+errors+"<br/>letters typed: "+ document.getElementById('input').innerHTML.length +', errors: ' + errors.length/2;
-                        });
-                    }
-
-                    count--;
-                },
-                1000);
+            countdown = window.setInterval(timer, 500);
         })();
+
+        function timer() {
+            document.getElementById('count-down').innerHTML = count;
+
+            if (count == 0) {
+                window.clearInterval(countdown);
+                document.getElementById('count-down').innerHTML = 'go';
+
+                startTime = Date.now();
+                document.addEventListener("keydown", keydown);
+            }
+
+            count--;
+        }
+
+        function keydown(e) {
+            var timeSince = ((Date.now() - startTime) / 60000);
+            var grossWPM = (index / 5) / timeSince;
+            document.getElementById('wpm').innerHTML = Math.floor(grossWPM) + ' wpm';
+            //console.debug('keyCode=' + e.keyCode + ', timeSince=' + timeSince + ', grossWPM=' + grossWPM);
+
+            if (e.keyCode == 8 || e.keyCode == 16 || e.keyCode == 17 || e.keyCode == 18) { // backspace, shift, control, alt
+                return;
+            }
+
+            if (text.charAt(index) == e.key) {
+                index++;
+                document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='caret'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
+
+                state = "typing";
+            } else {
+                document.getElementById('text').innerHTML = text.slice(0, index) + "<span class='error'>" + text.charAt(index) + "</span>" + text.slice(index + 1);
+
+                if (state == "typing") {
+                    data.errors.add(text.charAt(index));
+                }
+
+                state = "mistyped";
+            }
+            document.getElementById('errors').innerHTML = '<br/>error rate: ' + Math.floor((data.errors.count / index) * 100) + '%<br/>letters typed: ' + index + ', errors: ' + data.errors.count;
+
+            var graphData = google.visualization.arrayToDataTable(data.errors.graphData());
+            chart.draw(graphData, google.charts.Bar.convertOptions(options));
+        }
 
     </script>
 </body>
