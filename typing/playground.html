@@ -22,6 +22,7 @@
     <div id='text'></div>
     <div id='count-down'></div>
     <div id='wpm'></div>
+    <div id='progress'></div>
     <div id='errors'></div>
     <div id='error-bars'></div>
 
@@ -100,6 +101,8 @@
 
             var graphData = google.visualization.arrayToDataTable(data.errors.graphData());
             chart.draw(graphData, google.charts.Bar.convertOptions(options));
+            
+            document.getElementById('progress').innerHTML = Math.round((index / text.length) * 100) + '%';
         }
 
     </script>
